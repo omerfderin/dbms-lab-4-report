@@ -46,13 +46,14 @@ DB diske yazarken:
 
 # Özet Tablo
 
-| Kavram      | Bellek          | Disk / DB      |
-| ----------- | --------------- | -------------- |
-| Adresleme   | Pointer         | Page + Offset  |
-| Hız         | O(1)            | Page IO        |
-| PK          | Yok             | Index anahtarı |
-| Veri yapısı | Array / Pointer | B+Tree         |
-| Cache       | CPU cache       | Buffer Pool    |
+| Özellik | Standart Dosya Sistemi Yaklaşımı | MySQL InnoDB Yaklaşımı |
+|---------|-----------------------------------|------------------------|
+| **Erişim Birimi** | Byte Stream (Rastgele baytlar) | Page (16KB Bloklar) |
+| **Adresleme** | Dosya Yolu + Byte Offset | Tablespace ID + Page No + Offset |
+| **Önbellek** | OS Page Cache (Kontrolsüz) | Buffer Pool (Veritabanı optimize) |
+| **Veri Yapısı** | Düz Dosya (Flat File) | B+ Tree (Sıralı & Dengeli) |
+| **Yazma Güvenliği** | write() (OS Buffer'da bekler) | fsync() (Diske zorlar & WAL) |
+| **Arama Hızı** | O(N) (Tüm dosyayı tara) | O(logN) (Ağaçta gezin) |
 
 ---
 
