@@ -106,25 +106,26 @@ Veritabanlarının en kritik özelliği olan Veri güvenliği (**Durability**), 
 * **write():** Hızlıdır ancak veriyi sadece işletim sisteminin kernel önbelleğine (OS Buffer) yazar. Eğer bu sırada elektrik kesilirse, veri henüz fiziksel diske gitmediği için kaybolur.
 * **fsync():** Yavaştır ancak veriyi fiziksel diske (manyetik plaka veya NAND yongası) yazmaya zorlar.
 
+### WAL (Write Ahead Log) İlkesi
+
 InnoDB, veri kaybını sıfıra indirmek için **Write-Ahead Logging (WAL)** prensibini kullanır. `log0log.cc` dosyasında görüldüğü üzere, Redo Log dosyaları yazılırken **fsync** (`os_file_fsync_posix`) çağrısı kullanılır. Performans artışı için veri sayfaları RAM'de bekletilse bile, işlem "tamamlandı" (commit) dendiğinde, log kayıtları `fsync` ile diske mühürlenir. Bu sayede sistem çökse bile, yeniden başlatıldığında bu loglar tekrar oynatılarak veri kurtarılır.
 
 ## VT Üzerinde Gösterilen Kaynak Kodları
 
-* **Disk Yönetimi ve Adresleme:** [storage/innobase/fil/fil0fil.cc](https://github.com/mysql/mysql-server/blob/8.0/storage/innobase/fil/fil0fil.cc)
-* **Buffer Pool Mantığı:** [storage/innobase/buf/buf0buf.cc](https://github.com/mysql/mysql-server/blob/8.0/storage/innobase/buf/buf0buf.cc)
-* **LRU Algoritması:** [storage/innobase/buf/buf0lru.cc](https://github.com/mysql/mysql-server/blob/8.0/storage/innobase/buf/buf0lru.cc)
-* **B+ Tree Arama:** [storage/innobase/btr/btr0cur.cc](https://github.com/mysql/mysql-server/blob/8.0/storage/innobase/btr/btr0cur.cc)
-* **Disk Alan Yönetimi (Bitmap):** [storage/innobase/fsp/fsp0fsp.cc](https://github.com/mysql/mysql-server/blob/8.0/storage/innobase/fsp/fsp0fsp.cc)
-* **Fsync ve I/O:** [storage/innobase/os/os0file.cc](https://github.com/mysql/mysql-server/blob/8.0/storage/innobase/os/os0file.cc)
-* **Loglama (Redo Log):** [storage/innobase/log/log0log.cc](https://github.com/mysql/mysql-server/blob/8.0/storage/innobase/log/log0log.cc), [storage/innobase/log/log0write.cc](https://github.com/mysql/mysql-server/blob/8.0/storage/innobase/log/log0write.cc)
-* **Deadlock Dedektörü:** [storage/innobase/lock/lock0lock.cc](https://github.com/mysql/mysql-server/blob/8.0/storage/innobase/lock/lock0lock.cc)
+* **Blok Bazlı Disk Erişimi (Block ID + Offset):** [storage/innobase/fil/fil0fil.cc](https://github.com/mysql/mysql-server/blob/8.0/storage/innobase/fil/fil0fil.cc)
+* **Sayfa Bazlı Okuma (Satır/ Sayfa Okuması):** [storage/innobase/buf/buf0rea.cc](https://github.com/mysql/mysql-server/blob/8.0/storage/innobase/buf/buf0rea.cc)
+* **Buffer Pool Caching (Sık Kullanılan Sayfaları Bellekte Tutma):** [storage/innobase/buf/buf0buf.cc](https://github.com/mysql/mysql-server/blob/8.0/storage/innobase/buf/buf0buf.cc), [storage/innobase/buf/buf0lru.cc](https://github.com/mysql/mysql-server/blob/8.0/storage/innobase/buf/buf0lru.cc)
+* **B+ Tree Veri Yapısı:** [storage/innobase/btr/btr0cur.cc](https://github.com/mysql/mysql-server/blob/8.0/storage/innobase/btr/btr0cur.cc)
+* **Veri Yapıları (Hash Table, Linked List, Bitmap):** [storage/innobase/buf/buf0buf.cc](https://github.com/mysql/mysql-server/blob/8.0/storage/innobase/buf/buf0buf.cc), [storage/innobase/buf/buf0lru.cc](https://github.com/mysql/mysql-server/blob/8.0/storage/innobase/buf/buf0lru.cc), [storage/innobase/fsp/fsp0fsp.cc](https://github.com/mysql/mysql-server/blob/8.0/storage/innobase/fsp/fsp0fsp.cc)
+* **Log Disk Yönetimi (fsync vs write):** [storage/innobase/os/os0file.cc](https://github.com/mysql/mysql-server/blob/8.0/storage/innobase/os/os0file.cc)
+* **WAL İlkesi (Write-Ahead Logging):** [storage/innobase/log/log0log.cc](https://github.com/mysql/mysql-server/blob/8.0/storage/innobase/log/log0log.cc), [storage/innobase/log/log0write.cc](https://github.com/mysql/mysql-server/blob/8.0/storage/innobase/log/log0write.cc), [storage/innobase/mtr/mtr0mtr.cc](https://github.com/mysql/mysql-server/blob/8.0/storage/innobase/mtr/mtr0mtr.cc)
 
 ### Ek Dosyalar
 
 * `storage/innobase/include/fil0fil.h` - `fil_addr_t` yapısı (block_id + offset)
 * `storage/innobase/include/univ.i` - Sayfa boyutu sabitleri (`UNIV_PAGE_SIZE_DEF`)
-* `storage/innobase/buf/buf0rea.cc` - Sayfa okuma işlemleri (`buf_read_page_low`)
-* `storage/innobase/include/buf0buf.ic` - Hash tablosu arama makroları
+* `storage/innobase/include/buf0buf.ic` - Hash tablosu arama makroları (`HASH_SEARCH`)
 * `storage/innobase/page/page0cur.cc` - Binary search implementasyonu (`page_cur_search_with_match`)
-* `storage/innobase/include/ut0lst.h` - Linked list makroları
+* `storage/innobase/include/ut0lst.h` - Linked list makroları (`UT_LIST_GET_LAST`)
 * `storage/innobase/include/fsp0fsp.h` - Bitmap tanımları (`XDES_BITMAP`)
+* `storage/innobase/lock/lock0lock.cc` - Deadlock dedektörü (Directed Graph veri yapısı)
