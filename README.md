@@ -31,7 +31,7 @@ Aşağıda kutucuk (checkbox) ile gösterilen maddelerden en az birini seçtiği
 # 2. Veri Yapıları Perspektifi
 
 - [X]  B+ Tree Veri Yapıları VT' lerde nasıl kullanılır?
-- [X]  VT' lerde hangi veri yapıları hangi amaçlarla kullanılır?
+- [ ]  VT' lerde hangi veri yapıları hangi amaçlarla kullanılır?
 - [ ]  Clustered vs Non-Clustered Index Kavramı
 - [ ]  InnoDB satırı diskte nasıl durur?
 - [ ]  LSM-tree (LevelDB, RocksDB) farkı
@@ -84,22 +84,6 @@ InnoDB, tabloları ve indeksleri disk üzerinde rastgele değil, sıralı tutmak
 Bu yapıda veriler, ağacın sadece **Yaprak (Leaf)** düğümlerinde bulunur; **İç (Internal)** düğümler ise sadece yönlendirme (pointer) bilgisini tutar. Bu ayrım, bir sayfaya çok sayıda yönlendirici sığmasını (yüksek fan-out) sağlar, böylece ağacın derinliği azalır (genelde 3-4 seviye).
 Arama işlemi ağacın en tepesindeki kök (root) sayfasından başlar (`btr_cur_search_to_nth_level`). Dallar takip edilerek verinin bulunduğu yaprak sayfaya inilir. Yaprak sayfaya gelindiğinde, sayfa içinde **Binary Search** yapılarak hedef kayıt bulunur. Ayrıca yaprak düğümler birbirine çift yönlü bağlı (Double Linked List) olduğu için, "ID > 100" gibi aralık sorgularında (**Range Scan**) ağaç tekrar gezilmeden yan sayfaya geçilerek sıralı okuma yapılır.
 
-### VT' lerde hangi veri yapıları hangi amaçlarla kullanılır?
-InnoDB, farklı performans ve tutarlılık ihtiyaçlarını karşılamak için hibrit bir veri yapısı seti kullanır:
-
-* **Hash Table (Hash Tablosu):** Veriye $O(1)$ sürede ulaşmak için kullanılır.
-    * *Kullanım:* Buffer Pool yönetiminde "Sayfa X şu an bellekte mi?" sorusuna anında yanıt vermek ve Adaptive Hash Index ile sık erişilen verilere B+ Tree'yi dolaşmadan ulaşmak için.
-* **Linked List (Bağlı Liste):** Dinamik liste ve kuyruk yönetimi için kullanılır.
-    * *Kullanım:* Bellek tahliyesi için LRU listesi, üzerinde değişiklik yapılmış ("dirty") sayfaları diske yazmak için Flush Listesi ve eski veri versiyonlarını tutarak rollback imkanı sağlayan Undo Log zinciri.
-* **Bitmap (Bit Haritası):** Alan ve kaynak yönetimi için kullanılır.
-    * *Kullanım:* Disk üzerindeki 16KB'lık sayfaların ve "Extent" (64 sayfalık grup) yapılarının doluluk durumunu en az bit maliyetiyle takip etmek.
-* **Inverted Index (Ters Dizin):** Metin tabanlı aramalar için kullanılır.
-    * *Kullanım:* Full-Text Search işlemlerinde kelime bazlı içerik taraması yaparak, kelimenin hangi dokümanlarda geçtiğini listeler.
-* **R-Tree:** Uzaysal veri yönetimi için kullanılır.
-    * *Kullanım:* Harita ve koordinat (GIS) verilerini dikdörtgen alanlar (Bounding Box) şeklinde indekslemek.
-* **Directed Graph (Yönlü Çizge):** Kilit ve işlem yönetimi için kullanılır.
-    * *Kullanım:* Transactionlar arasındaki "bekleme" ilişkilerini modelleyerek, döngüsel beklemeleri (Deadlock) tespit etmek.
-
 ### Log disk (fsync vs write) sistem çağrıları farkı
 Veritabanlarının en kritik özelliği olan Veri güvenliği (**Durability**), işletim sistemi seviyesindeki bu iki çağrı arasındaki farka dayanır:
 
@@ -116,7 +100,6 @@ InnoDB, veri kaybını sıfıra indirmek için **Write-Ahead Logging (WAL)** pre
 * **Sayfa Bazlı Okuma (Satır/ Sayfa Okuması):** [storage/innobase/buf/buf0rea.cc](https://github.com/mysql/mysql-server/blob/8.0/storage/innobase/buf/buf0rea.cc)
 * **Buffer Pool Caching (Sık Kullanılan Sayfaları Bellekte Tutma):** [storage/innobase/buf/buf0buf.cc](https://github.com/mysql/mysql-server/blob/8.0/storage/innobase/buf/buf0buf.cc), [storage/innobase/buf/buf0lru.cc](https://github.com/mysql/mysql-server/blob/8.0/storage/innobase/buf/buf0lru.cc)
 * **B+ Tree Veri Yapısı:** [storage/innobase/btr/btr0cur.cc](https://github.com/mysql/mysql-server/blob/8.0/storage/innobase/btr/btr0cur.cc)
-* **Veri Yapıları (Hash Table, Linked List, Bitmap):** [storage/innobase/buf/buf0buf.cc](https://github.com/mysql/mysql-server/blob/8.0/storage/innobase/buf/buf0buf.cc), [storage/innobase/buf/buf0lru.cc](https://github.com/mysql/mysql-server/blob/8.0/storage/innobase/buf/buf0lru.cc), [storage/innobase/fsp/fsp0fsp.cc](https://github.com/mysql/mysql-server/blob/8.0/storage/innobase/fsp/fsp0fsp.cc)
 * **Log Disk Yönetimi (fsync vs write):** [storage/innobase/os/os0file.cc](https://github.com/mysql/mysql-server/blob/8.0/storage/innobase/os/os0file.cc)
 * **WAL İlkesi (Write-Ahead Logging):** [storage/innobase/log/log0log.cc](https://github.com/mysql/mysql-server/blob/8.0/storage/innobase/log/log0log.cc), [storage/innobase/log/log0write.cc](https://github.com/mysql/mysql-server/blob/8.0/storage/innobase/log/log0write.cc), [storage/innobase/mtr/mtr0mtr.cc](https://github.com/mysql/mysql-server/blob/8.0/storage/innobase/mtr/mtr0mtr.cc)
 
@@ -126,6 +109,3 @@ InnoDB, veri kaybını sıfıra indirmek için **Write-Ahead Logging (WAL)** pre
 * `storage/innobase/include/univ.i` - Sayfa boyutu sabitleri (`UNIV_PAGE_SIZE_DEF`)
 * `storage/innobase/include/buf0buf.ic` - Hash tablosu arama makroları (`HASH_SEARCH`)
 * `storage/innobase/page/page0cur.cc` - Binary search implementasyonu (`page_cur_search_with_match`)
-* `storage/innobase/include/ut0lst.h` - Linked list makroları (`UT_LIST_GET_LAST`)
-* `storage/innobase/include/fsp0fsp.h` - Bitmap tanımları (`XDES_BITMAP`)
-* `storage/innobase/lock/lock0lock.cc` - Deadlock dedektörü (Directed Graph veri yapısı)
